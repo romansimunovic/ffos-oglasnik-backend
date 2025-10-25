@@ -2,7 +2,7 @@
   "name": "ffos-oglasnik-backend",
   "version": "1.0.0",
   "description": "Ovo je repozitorij namijenjen backend dijelu projekta \"Digitalni oglasnik\" Filozofskog fakulteta u Osijeku (FFOS Oglasnik), izrađen u sklopu Projektnog rada na drugoj godini diplomskog studija Informacijskih tehnologija Filozofskog fakulteta u Osijeku.",
-  "main": "index.js",
+  "main": "server.js",
  "scripts": {
   "start": "node server.js",
   "dev": "nodemon server.js"
