@@ -14,4 +14,8 @@ app.use("/api/oglasi", oglasRoutes);
 app.use("/api/korisnici", korisnikRoutes);
 app.use("/api/vijesti", vijestRoutes);
 
+app.get("/", (req, res) => {
+  res.send("FFOS Oglasnik backend uspješno pokrenut!");
+});
+
 export default app;
