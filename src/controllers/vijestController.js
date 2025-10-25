@@ -1,5 +1,6 @@
 import * as vijestService from "../services/vijestService.js";
 import { VijestDTO } from "../dto/VijestDTO.js";
+import Vijest from "../models/Vijest.js";
 
 export const getAllVijesti = async (req, res, next) => {
   try {
@@ -21,3 +22,17 @@ export const deleteVijest = async (req, res, next) => {
     res.json({ message: "Vijest obrisana" });
   } catch (err) { next(err); }
 };
+
+// dohvaćanje svih vijesti (sortirane po datumu)
+export async function getVijesti(req, res) {
+  try {
+    const vijesti = await Vijest.find().sort({ datum: -1 });
+    res.json(vijesti);
+  } catch (err) {
+    console.error("Greška pri dohvaćanju vijesti:", err);
+    res.status(500).json({ message: "Greška pri dohvaćanju vijesti." });
+  }
+}
+
+
+
