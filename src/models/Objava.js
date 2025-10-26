@@ -2,16 +2,19 @@ import mongoose from "mongoose";
 
 const objavaSchema = new mongoose.Schema({
   naslov: { type: String, required: true },
-  opis: { type: String },
+  sadrzaj: { type: String, required: true },
   tip: {
     type: String,
-    enum: ["radionica", "kviz", "sastanak", "projekti", "natječaj", "ostalo"],
-    required: true
+    enum: ["radionice", "kvizovi", "projekti", "natječaji", "ostalo"],
+    default: "ostalo",
   },
-  autor: { type: String },
+  autor: { type: String, default: "Nepoznato" },
   datum: { type: Date, default: Date.now },
-  link: { type: String },
-  aktivna: { type: Boolean, default: true }
-}, { timestamps: true });
+  status: {
+    type: String,
+    enum: ["na čekanju", "odobreno", "odbijeno"],
+    default: "na čekanju",
+  },
+});
 
 export default mongoose.model("Objava", objavaSchema);

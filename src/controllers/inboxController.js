@@ -1,31 +1,43 @@
-import * as inboxService from "../services/inboxService.js";
+import { zapocniRazgovor, posaljiPoruku, dohvatiPoruke } from "../services/inboxService.js";
+import { dohvatiSveRazgovore } from "../services/inboxService.js";
 
-export const zapocniRazgovor = async (req, res) => {
+
+export const zapocniRazgovorController = async (req, res) => {
   try {
-    const { user2 } = req.body;
-    const razgovor = await inboxService.zapocniRazgovor(req.user.id, user2);
+    const { korisnici } = req.body; // [id1, id2]
+    const razgovor = await zapocniRazgovor(korisnici);
     res.json(razgovor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
-export const posaljiPoruku = async (req, res) => {
+export const posaljiPorukuController = async (req, res) => {
   try {
-    const { razgovorId, tekst } = req.body;
-    const poruka = await inboxService.posaljiPoruku(razgovorId, req.user.id, tekst);
+    const { razgovorId, posiljatelj, sadrzaj } = req.body;
+    const poruka = await posaljiPoruku(razgovorId, posiljatelj, sadrzaj);
     res.status(201).json(poruka);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
-export const dohvatiPoruke = async (req, res) => {
+export const dohvatiPorukeController = async (req, res) => {
   try {
     const { razgovorId } = req.params;
-    const poruke = await inboxService.dohvatiPoruke(razgovorId);
+    const poruke = await dohvatiPoruke(razgovorId);
     res.json(poruke);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+export const dohvatiSveRazgovoreController = async (req, res) => {
+  try {
+    const razgovori = await dohvatiSveRazgovore();
+    res.json(razgovori);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

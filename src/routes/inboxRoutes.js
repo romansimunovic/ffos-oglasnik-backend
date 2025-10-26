@@ -1,11 +1,19 @@
 import express from "express";
-import { zapocniRazgovor, posaljiPoruku, dohvatiPoruke } from "../controllers/inboxController.js";
+import { dohvatiSveRazgovoreController } from "../controllers/inboxController.js";
+
+
+import {
+  zapocniRazgovorController,
+  posaljiPorukuController,
+  dohvatiPorukeController,
+} from "../controllers/inboxController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/start", verifyToken, zapocniRazgovor);
-router.post("/send", verifyToken, posaljiPoruku);
-router.get("/:razgovorId", verifyToken, dohvatiPoruke);
+router.post("/start", verifyToken, zapocniRazgovorController);
+router.post("/send", verifyToken, posaljiPorukuController);
+router.get("/:razgovorId", verifyToken, dohvatiPorukeController);
+router.get("/svi", verifyToken, dohvatiSveRazgovoreController);
 
 export default router;

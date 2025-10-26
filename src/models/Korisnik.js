@@ -11,16 +11,12 @@ const korisnikSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash lozinke prije spremanja
+// hash prije spremanja (radi samo kod create/save)
 korisnikSchema.pre("save", async function (next) {
   if (!this.isModified("lozinka")) return next();
-  this.lozinka = await bcrypt.hash(this.lozinka, 10);
+  const salt = await bcrypt.genSalt(10);
+  this.lozinka = await bcrypt.hash(this.lozinka, salt);
   next();
 });
-
-// Provjera lozinke
-korisnikSchema.methods.provjeriLozinku = function (unesena) {
-  return bcrypt.compare(unesena, this.lozinka);
-};
 
 export default mongoose.model("Korisnik", korisnikSchema);
