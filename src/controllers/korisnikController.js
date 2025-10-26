@@ -1,23 +1,33 @@
-import * as korisnikService from "../services/korisnikService.js";
-import { KorisnikDTO } from "../dto/KorisnikDTO.js";
+import Korisnik from "../models/Korisnik.js";
+import jwt from "jsonwebtoken";
 
-export const getAllKorisnici = async (req, res, next) => {
+export const registracija = async (req, res) => {
   try {
-    const korisnici = await korisnikService.getAll();
-    res.json(korisnici.map(k => KorisnikDTO(k)));
-  } catch (err) { next(err); }
+    const korisnik = new Korisnik(req.body);
+    await korisnik.save();
+    res.status(201).json({ message: "Registracija uspješna" });
+  } catch (err) {
+    res.status(400).json({ message: "Greška pri registraciji", error: err.message });
+  }
 };
 
-export const createKorisnik = async (req, res, next) => {
+export const prijava = async (req, res) => {
   try {
-    const novi = await korisnikService.create(req.body);
-    res.status(201).json(KorisnikDTO(novi));
-  } catch (err) { next(err); }
-};
+    const { email, lozinka } = req.body;
+    const korisnik = await Korisnik.findOne({ email });
+    if (!korisnik) return res.status(404).json({ message: "Korisnik ne postoji" });
 
-export const deleteKorisnik = async (req, res, next) => {
-  try {
-    await korisnikService.remove(req.params.id);
-    res.json({ message: "Korisnik obrisan" });
-  } catch (err) { next(err); }
+    const tocno = await korisnik.provjeriLozinku(lozinka);
+    if (!tocno) return res.status(401).json({ message: "Pogrešna lozinka" });
+
+    const token = jwt.sign(
+      { id: korisnik._id, uloga: korisnik.uloga },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token, korisnik: { ime: korisnik.ime, uloga: korisnik.uloga } });
+  } catch (err) {
+    res.status(500).json({ message: "Greška pri prijavi", error: err.message });
+  }
 };
