@@ -1,22 +1,25 @@
 import jwt from "jsonwebtoken";
-const tajna = process.env.JWT_SECRET || "tajna_lozinka";
+import Korisnik from "../models/Korisnik.js";
 
-export const verifyToken = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ message: "Nema tokena." });
-
-  const token = header.split(" ")[1];
+// 🔹 Provjera korisnika (student ili admin)
+export const protect = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, tajna);
-    req.user = decoded;
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.split(" ")[1] : null;
+    if (!token) return res.status(401).json({ message: "Nema tokena." });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await Korisnik.findById(decoded.id).select("-lozinka");
+    if (!req.user) return res.status(401).json({ message: "Nevažeći korisnik." });
+
     next();
   } catch (err) {
-    res.status(403).json({ message: "Nevažeći token." });
+    res.status(401).json({ message: "Neautorizirano." });
   }
 };
 
-export const adminOnly = (req, res, next) => {
-  if (req.user?.uloga !== "admin")
-    return res.status(403).json({ message: "Samo admini imaju pristup." });
-  next();
+// 🔹 Ograničenje za admin korisnike
+export const protectAdmin = (req, res, next) => {
+  if (req.user?.uloga === "admin") return next();
+  return res.status(403).json({ message: "Pristup zabranjen. Samo admin." });
 };
