@@ -7,54 +7,73 @@ Sustav je razvijen u Node.js i Express tehnologiji te pruža REST API za upravlj
 Mentor projekta: izv. prof. dr. sc. Tomislav Jakopec
 Članovi tima: Franjo Čopčić, Roman Šimunović, Lucija Sabljak
 
-## Preduvjeti
+FFOS Oglasnik – Backend
 
-- Node.js (verzija 18+)
-- MongoDB (lokalno, default port 27017)
-- Visual Studio Code
-- Git
+Ovaj dio projekta predstavlja backend aplikaciju za FFOS Oglasnik, razvijen u sklopu diplomskog studija Informacijskih tehnologija na Filozofskom fakultetu u Osijeku.
+Mentor projekta: izv. prof. dr. sc. Tomislav Jakopec
 
-Provjerite verzije:
+Preduvjeti
+
+Prije pokretanja backend-a, provjerite imate li instalirano:
+
+Node.js ≥ 18
+
+MongoDB (lokalno, port 27017)
+
+Visual Studio Code
+
+Git
+
+Provjera verzije:
+
 node -v
 npm -v
 mongod --version
 
+Instalacija i pokretanje
+
+Kloniranje repozitorija
+
+git clone https://github.com/romansimunovic/ffos-oglasnik-backend.git
+cd ffos-oglasnik-backend
 
 
-## Instalacija i pokretanje
+Instalacija ovisnosti
 
-1. Klonirati repozitorij:
-    ```
-    git clone https://github.com/romansimunovic/ffos-oglasnik-backend.git
-    ```
-2. Otvoriti folder u VS Code.
-3. Instalirati ovisnosti:
-    ```
-    npm install
-    ```
-4. Napraviti `.env` datoteku u rootu projekta i zalijepiti:
-    ```
-    PORT=5000
-    MONGO_URI=mongodb://127.0.0.1:27017/ffos_oglasnik
-    JWT_SECRET=super_tajni_kljuc
-    ```
-5. Pokrenuti MongoDB servis:
-    ```
-    mongod
-    ```
-   ili kroz MongoDB Compass (Connect).
+npm install
 
-6. Napuniti bazu testnim podacima:
-    ```
-    node seedAdmin.js
-    node seedObjave.js
-    node seedOdsjeci.js
-    ```
-7. Pokrenuti razvojni server:
-    ```
-    npm run dev
-    ```
 
-**Ako je uspješno:**
-- MongoDB povezan (`ffos_oglasnik`)
-- Server radi na portu 5000
+Konfiguracija .env datoteke
+Kreirajte .env u root folderu i dodajte:
+
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/ffos_oglasnik
+JWT_SECRET=super_tajni_kljuc
+
+
+Pokretanje MongoDB baze
+
+mongod
+
+
+ili se povežite kroz MongoDB Compass.
+
+Popunjavanje baze testnim podacima
+
+node seedAdmin.js
+node seedObjave.js
+node seedOdsjeci.js
+
+
+Pokretanje backend servera
+
+npm run dev
+
+
+Ako je sve u redu, vidjet ćete poruke o uspješnoj povezanosti s bazom i portu 5000.
+
+Dodatne napomene
+
+Za produkciju, osigurajte MongoDB servis na produkcijskom serveru.
+
+Backend podržava verzioniranje API-ja (npr. /api/v1/, /api/v2/).
