@@ -75,11 +75,9 @@ ili se povežite kroz **MongoDB Compass**.
 
 ```bash
 node seedAdmin.js
-node seedObjave.js
-node seedOdsjeci.js
 ```
 
-Ove skripte kreiraju administratorski račun, testne objave i odsjeke.
+Ove skripte kreiraju administratorski račun. No, može se i na web aplikaciji kreirati račun i sve, radi.
 
 ---
 
