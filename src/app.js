@@ -6,7 +6,6 @@ import odsjekRoutes from "./routes/odsjekRoutes.js";
 
 const app = express();
 
-// 👇 dopušteni frontend port
 const allowedOrigin = "http://localhost:5182";
 
 app.use(cors({
