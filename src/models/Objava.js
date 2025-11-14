@@ -5,7 +5,7 @@ const objavaSchema = new mongoose.Schema({
   sadrzaj: { type: String, required: true },
   tip: { type: String, enum: ["radionice","kvizovi","projekti","natječaji","ostalo"], default: "ostalo" },
   autor: { type: String, default: "Nepoznato" },
-  odsjek: { type: mongoose.Schema.Types.ObjectId, ref: "Odsjek" },
+  odsjek: { type: String, required: true }, // ili bez required ako nije obavezan
   platforma: { type: String, enum: ["web","facebook","instagram"], default: "web" },
   link: { type: String },
   datum: { type: Date, default: Date.now },
