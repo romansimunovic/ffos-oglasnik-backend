@@ -15,14 +15,14 @@ const run = async () => {
     const admin = await Korisnik.create({
       ime: "Admin FFOS",
       email: "admin@ffos.hr",
-      lozinka: "admin123", // ⚠️ bez ručnog bcrypt hashiranja
+      lozinka: "admin123", 
       uloga: "admin",
     });
 
-    console.log("✅ Admin kreiran:", admin.email);
+    console.log("Admin kreiran:", admin.email);
     process.exit(0);
   } catch (err) {
-    console.error("❌ Greška pri kreiranju admina:", err);
+    console.error("Greška pri kreiranju admina:", err);
     process.exit(1);
   }
 };
