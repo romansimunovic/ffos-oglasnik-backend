@@ -7,6 +7,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import objavaRoutes from "./src/routes/objavaRoutes.js";
 import odsjekRoutes from "./src/routes/odsjekRoutes.js";
 import syncRoutes from "./src/routes/syncRoutes.js";
+import korisnikRoutes from "./src/routes/korisnikRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/objave", objavaRoutes);
 app.use("/api/odsjeci", odsjekRoutes);
 app.use("/api/sync", syncRoutes);
+app.use("/api/korisnik", korisnikRoutes);
 
 // ✅ Pokretanje servera
 const PORT = process.env.PORT || 5000;
