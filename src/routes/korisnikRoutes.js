@@ -2,15 +2,12 @@ import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import {
   spremiObjavu,
-  dohvatiSpremljeneObjave,
+  getSpremljeneObjave,
 } from "../controllers/korisnikController.js";
 
 const router = express.Router();
 
-// spremanje objave
 router.post("/spremiObjavu/:objavaId", protect, spremiObjavu);
-
-// dohvat svih spremljenih objava prijavljenog korisnika
-router.get("/spremljene", protect, dohvatiSpremljeneObjave);
+router.get("/spremljene", protect, getSpremljeneObjave);
 
 export default router;

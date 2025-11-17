@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import Korisnik from "../models/Korisnik.js";
 
-// 🔹 Provjera korisnika (student ili admin)
 export const protect = async (req, res, next) => {
   try {
     const header = req.headers.authorization || "";
@@ -18,7 +17,6 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// 🔹 Ograničenje za admin korisnike
 export const protectAdmin = (req, res, next) => {
   if (req.user?.uloga === "admin") return next();
   return res.status(403).json({ message: "Pristup zabranjen. Samo admin." });

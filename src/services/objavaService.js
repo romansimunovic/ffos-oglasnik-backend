@@ -64,30 +64,20 @@ export const deleteObjava = async (id) => {
 
 export const getSpremljeneObjave = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
+    const korisnik = await Korisnik.findById(req.user._id)
       .populate({
         path: "spremljeneObjave",
-        populate: { path: "odsjek", select: "naziv" }
+        populate: [
+          { path: "autor", select: "ime" }
+        ]
       });
+    if (!korisnik) return res.status(404).json([]);
 
-    if (!user) return res.status(404).json([]);
-
-    const result = user.spremljeneObjave.map(objava => ({
-      _id: objava._id,
-      naslov: objava.naslov,
-      sadrzaj: objava.sadrzaj,
-      tip: objava.tip,
-      status: objava.status,
-      autor: objava.autor?.ime || objava.autor || "Nepoznato",
-      odsjek: objava.odsjek
-        ? { _id: objava.odsjek._id, naziv: objava.odsjek.naziv }
-        : null,
-      platforma: objava.platforma,
-      link: objava.link || null,
-      datum: objava.datum,
-    }));
+    const result = korisnik.spremljeneObjave.map(ObjavaDTO);
     res.status(200).json(result);
   } catch (err) {
+    console.error("Spremljene objave error:", err);
     res.status(500).json({ message: "Greška dohvaćanja spremljenih objava.", error: err.message });
   }
 };
+

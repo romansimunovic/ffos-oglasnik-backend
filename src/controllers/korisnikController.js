@@ -5,47 +5,44 @@ const getUserIdFromReq = (req) => {
   return req.user?.id || req.user?._id || req.userId;
 };
 
-// npr. /korisnik/spremiObjavu/:id
 export const spremiObjavu = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const objavaId = req.params.id;
+    const korisnik = await Korisnik.findById(req.user._id);
+    const objava = await Objava.findById(req.params.objavaId);
+    if (!korisnik || !objava) return res.status(404).json({ message: "Korisnik ili objava ne postoji." });
 
-    const korisnik = await Korisnik.findById(userId);
-    if (!korisnik) return res.status(404).json({ message: "Korisnik nije pronađen." });
-
-    // Dodaj ako ne postoji već u spremljeneObjave
-    if (!korisnik.spremljeneObjave.includes(objavaId)) {
-      korisnik.spremljeneObjave.push(objavaId);
+    // Provjera dupliciranosti
+    if (!korisnik.spremljeneObjave.some(id => id.equals(objava._id))) {
+      korisnik.spremljeneObjave.push(objava._id);
       await korisnik.save();
     }
-
     res.status(200).json({ message: "Objava spremljena." });
   } catch (err) {
-    console.error("Greška pri spremanju objave:", err); // LOG!
     res.status(500).json({ message: "Greška pri spremanju objave.", error: err.message });
   }
 };
 
-
-// GET /api/korisnik/spremljene
-export const dohvatiSpremljeneObjave = async (req, res) => {
+export const getSpremljeneObjave = async (req, res) => {
   try {
-    const userId = getUserIdFromReq(req);
-    if (!userId) {
-      return res.status(401).json({ message: "Neautorizirano." });
-    }
+    const korisnik = await Korisnik.findById(req.user._id)
+      .populate({ path: "spremljeneObjave", populate: { path: "autor", select: "ime" } });
 
-    const korisnik = await Korisnik.findById(userId).populate(
-      "spremljeneObjave"
-    );
-    if (!korisnik) {
-      return res.status(404).json({ message: "Korisnik nije pronađen." });
-    }
-
-    return res.json(korisnik.spremljeneObjave || []);
+    if (!korisnik) return res.status(404).json([]);
+    const spremljene = korisnik.spremljeneObjave.map(objava => ({
+      _id: objava._id,
+      naslov: objava.naslov,
+      sadrzaj: objava.sadrzaj,
+      tip: objava.tip,
+      status: objava.status,
+      autor: objava.autor?.ime || "Nepoznato",
+      odsjek: objava.odsjek || "-",
+      platforma: objava.platforma,
+      datum: objava.datum
+    }));
+    res.status(200).json(spremljene);
   } catch (err) {
-    console.error("Greška dohvatiSpremljeneObjave:", err);
-    return res.status(500).json({ message: "Greška na serveru." });
+    console.error("Greška dohvaćanja spremljenih objava:", err);
+    res.status(500).json({ message: "Greška servera." });
   }
 };
+

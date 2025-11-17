@@ -5,8 +5,7 @@ export const ObjavaDTO = (objava) => ({
   tip: objava.tip,
   status: objava.status,
   autor: objava.autor?.ime,
-  odsjek: objava.odsjek ? { _id: objava.odsjek._id, naziv: objava.odsjek.naziv } : null,
+  odsjek: objava.odsjek,  // tipa string!
   platforma: objava.platforma,
-  link: objava.link || null,
   datum: objava.datum,
 });
