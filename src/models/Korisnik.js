@@ -4,11 +4,12 @@ import bcrypt from "bcryptjs";
 const korisnikSchema = new mongoose.Schema(
   {
     ime: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, index: true },
     lozinka: { type: String, required: true },
     uloga: { type: String, enum: ["student", "admin"], default: "student" },
-
-    spremljeneObjave: [{ type: mongoose.Schema.Types.ObjectId, ref: "Objava" }],
+    spremljeneObjave: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Objava" }
+    ]
   },
   { timestamps: true }
 );
@@ -23,5 +24,11 @@ korisnikSchema.pre("save", async function (next) {
 korisnikSchema.methods.provjeriLozinku = async function (kandidatLozinka) {
   return await bcrypt.compare(kandidatLozinka, this.lozinka);
 };
+
+// (Opcionalno) helper da uvijek popuni spremljeneObjave kod find()
+korisnikSchema.pre(/^find/, function (next) {
+  this.populate("spremljeneObjave"); // automatski populate gdje trebaš
+  next();
+});
 
 export default mongoose.model("Korisnik", korisnikSchema);

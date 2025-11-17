@@ -51,12 +51,13 @@ export const updateObjavaStatus = async (id, status) => {
   return updated ? ObjavaDTO(updated) : null;
 };
 
-// Dohvat svih objava na čekanju
-export const getPendingObjave = async () => {
-  const objave = await Objava.find({ status: "na čekanju" }).populate("odsjek", "naziv").sort({ datum: -1 });
+// Dohvati SVE objave za admina (bez filtera po statusu)
+export const getAllObjaveForAdmin = async () => {
+  const objave = await Objava.find({})
+    .populate("odsjek", "naziv")
+    .sort({ datum: -1 });
   return objave.map((o) => ObjavaDTO(o));
 };
-
 
 // Brisanje objave
 export const deleteObjava = async (id) => {
