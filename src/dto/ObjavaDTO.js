@@ -4,7 +4,7 @@ export const ObjavaDTO = (objava) => ({
   sadrzaj: objava.sadrzaj,
   tip: objava.tip,
   status: objava.status,
-  autor: objava.autor,
+  autor: objava.autor?.ime,
   odsjek: objava.odsjek ? { _id: objava.odsjek._id, naziv: objava.odsjek.naziv } : null,
   platforma: objava.platforma,
   link: objava.link || null,

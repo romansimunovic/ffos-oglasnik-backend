@@ -26,12 +26,15 @@ export const getObjavaById = async (req, res) => {
 
 export const createObjava = async (req, res) => {
   try {
-    const novaObjava = await objavaService.createObjava(req.body);
+    const data = req.body;
+    data.autor = req.user._id; // Automatski stavi ID korisnika iz login tokena!
+    const novaObjava = await objavaService.createObjava(data);
     res.status(201).json(novaObjava);
   } catch (err) {
     res.status(500).json({ message: "Greška pri stvaranju objave.", error: err.message });
   }
 };
+
 
 export const updateObjavaStatus = async (req, res) => {
   try {
@@ -59,26 +62,23 @@ export const getAllObjaveAdmin = async (req, res) => {
 
 export const getSpremljeneObjave = async (req, res) => {
   try {
-    const userId = req.user.id;
-    // Populiraj i odsjek iz objava radi prikaza naziva odsjeka!
-    const user = await User.findById(userId)
+    const korisnik = await Korisnik.findById(req.user.id)
       .populate({
         path: "spremljeneObjave",
-        populate: {
-          path: "odsjek",
-          select: "naziv"
-        }
+        populate: [
+          { path: "odsjek", select: "naziv" },
+          { path: "autor", select: "ime" }
+        ]
       });
+    if (!korisnik) return res.status(404).json([]);
 
-    if (!user) return res.status(404).json([]);
-
-    const result = user.spremljeneObjave.map(objava => ({
+    const result = korisnik.spremljeneObjave.map(objava => ({
       _id: objava._id,
       naslov: objava.naslov,
       sadrzaj: objava.sadrzaj,
       tip: objava.tip,
       status: objava.status,
-      autor: objava.autor,
+      autor: objava.autor?.ime || "Nepoznato",
       odsjek: objava.odsjek
         ? { _id: objava.odsjek._id, naziv: objava.odsjek.naziv }
         : null,
@@ -86,12 +86,14 @@ export const getSpremljeneObjave = async (req, res) => {
       link: objava.link || null,
       datum: objava.datum
     }));
-
     res.status(200).json(result);
   } catch (err) {
-    res.status(500).json({ message: "Greška.", error: err.message });
+    console.error("Greška dohvata spremljenih objava:", err); // LOG!
+    res.status(500).json({ message: "Greška dohvaćanja spremljenih objava.", error: err.message });
   }
 };
+
+
 
 export const deleteObjava = async (req, res) => {
   try {
