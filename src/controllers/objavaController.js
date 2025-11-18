@@ -12,9 +12,8 @@ export const getObjave = async (req, res) => {
     const sort = sortBy === "oldest" ? { datum: 1 } : { datum: -1 };
 
     const objave = await Objava.find(query)
-      .populate("autor", "ime")
-      .populate("odsjek", "naziv")
-      .sort(sort);
+  .populate("autor", "ime")
+  .sort(sort);
 
     res.status(200).json(objave.map(ObjavaDTO));
   } catch (err) {

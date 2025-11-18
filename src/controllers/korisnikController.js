@@ -1,48 +1,60 @@
+// src/controllers/korisnikController.js
 import Korisnik from "../models/Korisnik.js";
-
-const getUserIdFromReq = (req) => {
-  // ovisi što ti verifyToken radi – obično je ili req.user.id ili req.user._id
-  return req.user?.id || req.user?._id || req.userId;
-};
+import Objava from "../models/Objava.js";
 
 export const spremiObjavu = async (req, res) => {
   try {
-    const korisnik = await Korisnik.findById(req.user._id);
-    const objava = await Objava.findById(req.params.objavaId);
-    if (!korisnik || !objava) return res.status(404).json({ message: "Korisnik ili objava ne postoji." });
+    const objavaId = req.params.objavaId || req.params.id;
+    if (!objavaId) return res.status(400).json({ message: "ID objave nije proslijeđen." });
 
-    // Provjera dupliciranosti
-    if (!korisnik.spremljeneObjave.some(id => id.equals(objava._id))) {
-      korisnik.spremljeneObjave.push(objava._id);
-      await korisnik.save();
-    }
-    res.status(200).json({ message: "Objava spremljena." });
+    if (!req.user || !req.user._id) return res.status(401).json({ message: "Niste autorizirani." });
+
+    // provjeri postoji li objava
+    const objava = await Objava.findById(objavaId).select("_id");
+    if (!objava) return res.status(404).json({ message: "Objava ne postoji." });
+
+    // atomarno dodaj bez duplicata
+    const updated = await Korisnik.findByIdAndUpdate(
+      req.user._id,
+      { $addToSet: { spremljeneObjave: objava._id } },
+      { new: true }
+    ).select("spremljeneObjave");
+
+    return res.status(200).json({
+      message: "Objava spremljena.",
+      count: updated?.spremljeneObjave?.length ?? 0
+    });
   } catch (err) {
-    res.status(500).json({ message: "Greška pri spremanju objave.", error: err.message });
+    console.error("spremiObjavu error:", err);
+    return res.status(500).json({ message: "Greška pri spremanju objave.", error: err.message });
   }
 };
 
 export const getSpremljeneObjave = async (req, res) => {
   try {
-    const korisnik = await Korisnik.findById(req.user._id)
-      .populate({ path: "spremljeneObjave", populate: { path: "autor", select: "ime" } });
+    if (!req.user || !req.user._id) return res.status(401).json({ message: "Niste autorizirani." });
 
-    if (!korisnik) return res.status(404).json([]);
-    const spremljene = korisnik.spremljeneObjave.map(objava => ({
-      _id: objava._id,
-      naslov: objava.naslov,
-      sadrzaj: objava.sadrzaj,
-      tip: objava.tip,
-      status: objava.status,
-      autor: objava.autor?.ime || "Nepoznato",
-      odsjek: objava.odsjek || "-",
-      platforma: objava.platforma,
-      datum: objava.datum
+    const korisnik = await Korisnik.findById(req.user._id)
+      .populate({
+        path: "spremljeneObjave",
+        populate: [{ path: "autor", select: "ime" }]
+      });
+
+    if (!korisnik) return res.status(404).json({ message: "Korisnik ne postoji." });
+
+    const result = (korisnik.spremljeneObjave || []).map(o => ({
+      _id: o._id,
+      naslov: o.naslov,
+      sadrzaj: o.sadrzaj,
+      tip: o.tip,
+      autor: o.autor?.ime || "Nepoznato",
+      odsjek: o.odsjek,
+      datum: o.datum
     }));
-    res.status(200).json(spremljene);
+
+    return res.status(200).json(result);
   } catch (err) {
-    console.error("Greška dohvaćanja spremljenih objava:", err);
-    res.status(500).json({ message: "Greška servera." });
+    console.error("getSpremljeneObjave error:", err);
+    return res.status(500).json({ message: "Greška dohvaćanja spremljenih objava.", error: err.message });
   }
 };
-
