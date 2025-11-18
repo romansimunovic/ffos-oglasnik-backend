@@ -7,14 +7,14 @@ Backend aplikacija za **FFOS Oglasnik**, razvijena u sklopu diplomskog studija I
 
 ## Preduvjeti
 
-Prije pokretanja backend-a, provjerite imate li instalirano:
+Prije pokretanja backend-a, provjeriti da su instalirani sljedeći alati:
 
 - Node.js ≥ 18  
 - MongoDB (lokalno, port 27017)  
 - Visual Studio Code  
 - Git  
 
-Provjera verzije:
+Provjeriti verzije:
 
 ```bash
 node -v
@@ -26,14 +26,14 @@ mongod --version
 
 ## Instalacija i pokretanje
 
-### 1. Kloniranje repozitorija
+### 1. Klonirati repozitorij
 
 ```bash
 git clone https://github.com/romansimunovic/ffos-oglasnik-backend.git
 cd ffos-oglasnik-backend
 ```
 
-Otvorite folder u Visual Studio Codeu.
+Otvoriti folder u Visual Studio Codeu.
 
 ---
 
@@ -47,85 +47,37 @@ npm install
 
 ### 3. Konfiguracija `.env` datoteke
 
-U root folderu kreirajte datoteku `.env` sa sljedećim sadržajem:
+U root folderu kreirati datoteku **.env**.
 
-```
-PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/ffos_oglasnik
-JWT_SECRET=super_tajni_kljuc
-```
-
-> **Napomena:** `JWT_SECRET` zamijenite vlastitim tajnim ključem za produkciju.
+> **Napomena:** `JWT_SECRET` zamijeniti vlastitim tajnim ključem za produkciju.
 
 ---
 
-### 4. Pokretanje MongoDB baze
+### 4. Pokrenuti MongoDB bazu
 
-Pokrenite MongoDB servis:
+Pokreni MongoDB servis:
 
 ```bash
 mongod
 ```
 
-ili se povežite kroz **MongoDB Compass**.
+ili se povezati preko desktop app **MongoDB Compass**.
 
 ---
 
-### 5. Popunjavanje baze testnim podacima
+### 5. Ako želimo testirati admin funkcionalnost, ići ćemo preko seedera, u terminalu VSC ćemo napisati:
 
 ```bash
 node seedAdmin.js
 ```
 
-Ove skripte kreiraju administratorski račun. No, može se i na web aplikaciji kreirati račun i sve, radi.
-
 ---
 
-### 6. Pokretanje backend servera
+### 6. Pokreni backend server
 
 ```bash
 npm run dev
 ```
-
-Ako je sve u redu, vidjet ćete poruke:
-
-```
-MongoDB connected: ffos_oglasnik
-Server running on port 5000
-```
-
----
-
-## Struktura projekta
-
-```
-ffos-oglasnik-backend/
-├── controllers/   # Logika za API endpointove
-├── models/        # Mongoose modeli
-├── routes/        # Definicija ruta
-├── middleware/    # Middleware funkcije (auth, error handling)
-├── seed/          # Skripte za testne podatke
-├── .env           # Konfiguracija okoliša
-├── server.js      # Glavna datoteka servera
-└── package.json
-```
-
----
-
-## API verzioniranje
-
-Preporuka za budući razvoj:
-
-* `/api/v1/...` – trenutna verzija API-ja
-* `/api/v2/...` – nadogradnje i nove funkcionalnosti
-
----
-
-## Dodatne napomene
-
-* Za produkciju, osigurajte da MongoDB servis radi na produkcijskom serveru.
-* Svaka nadogradnja backend dijela treba biti verzionirana.
-* Sigurnost: čuvajte `.env` datoteku izvan verzioniranog repozitorija.
 
 ---
 
