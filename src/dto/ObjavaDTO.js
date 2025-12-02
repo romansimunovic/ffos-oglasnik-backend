@@ -4,8 +4,16 @@ export const ObjavaDTO = (objava) => ({
   sadrzaj: objava.sadrzaj,
   tip: objava.tip,
   status: objava.status,
-  autor: objava.autor?.ime,
-  odsjek: objava.odsjek,  // tipa string!
+
+  // cijeli autor objekt (ako je populate)
+  autor: objava.autor || null,
+
+  // dodatna polja koja frontend koristi
+  autorId: objava.autor?._id || null,
+  autorIme: objava.autor?.ime || null,
+  autorAvatar: objava.autor?.avatar || null,
+
+  odsjek: objava.odsjek,         // string ili populated objekt - frontend to već hendla
   platforma: objava.platforma,
   datum: objava.datum,
 });

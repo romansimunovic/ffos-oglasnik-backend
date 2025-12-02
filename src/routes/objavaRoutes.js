@@ -1,23 +1,31 @@
+// src/routes/objavaRoutes.js
 import express from "express";
 import {
   getObjave,
   getObjavaById,
   createObjava,
-  deleteObjava,
+  getAllObjaveAdmin,
+  getMojeObjave,
   updateObjavaStatus,
-  getSpremljeneObjave,
-  getAllObjaveAdmin
+  deleteObjava,
+  getObjaveByAutor,
 } from "../controllers/objavaController.js";
 import { protect, protectAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/admin", protect, protectAdmin, getAllObjaveAdmin);
+// javne rute
 router.get("/", getObjave);
+router.get("/autor/:autorId", getObjaveByAutor);
 router.get("/:id", getObjavaById);
-router.get('/spremljene', protect, getSpremljeneObjave);
+
+// za prijavljenog korisnika
+router.get("/moje", protect, getMojeObjave);
 router.post("/", protect, createObjava);
-router.put("/:id/status", protect, protectAdmin, updateObjavaStatus);
+
+// admin rute
+router.get("/admin/sve", protect, protectAdmin, getAllObjaveAdmin);
+router.patch("/:id/status", protect, protectAdmin, updateObjavaStatus);
 router.delete("/:id", protect, protectAdmin, deleteObjava);
 
 export default router;
