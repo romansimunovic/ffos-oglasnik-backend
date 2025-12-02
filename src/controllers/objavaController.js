@@ -53,49 +53,111 @@ export const getObjavaById = async (req, res) => {
   }
 };
 
-// Kreiraj novu objavu (student → adminu na odobrenje)
+
+// GET /api/objave/admin/sve - Update za search
+export const getAllObjaveAdmin = async (req, res) => {
+  try {
+    const { search, tip } = req.query;
+    
+    const query = {};
+    if (search) {
+      query.$or = [
+        { naslov: { $regex: search, $options: "i" } },
+        { sadrzaj: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (tip && tip !== "Sve") query.tip = tip;
+
+    const objave = await Objava.find(query)
+      .populate("autor", "ime avatar")
+      .sort({ datum: -1 });
+
+    // Group by status
+    const grouped = {
+      "na čekanju": [],
+      odobreno: [],
+      odbijeno: [],
+    };
+
+    objave.forEach((obj) => {
+      if (grouped[obj.status]) {
+        grouped[obj.status].push(obj);
+      }
+    });
+
+    res.json(objave); // Šalji sve, grupiranje radi frontend
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// ✅ KREIRAJ NOVU OBJAVU - SAMO ZA STUDENTE
 export const createObjava = async (req, res) => {
   try {
-    const { naslov, sadrzaj, tip, odsjek } = req.body;
-    if (!naslov || !sadrzaj || !tip || !odsjek) {
-      return res.status(400).json({ message: "Sva polja su obavezna." });
+    // 1. Provjeri je li korisnik prijavljen
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Morate biti prijavljeni." });
     }
 
+    // 2. Provjeri da admin NIJE kreator (admin samo odobrava)
+    if (req.user.uloga === "admin") {
+      return res.status(403).json({ 
+        message: "Administratori ne mogu kreirali objave. Samo študenti." 
+      });
+    }
+
+    // 3. Validacija podataka
+    const { naslov, sadrzaj, tip, odsjek } = req.body;
+
+    if (!naslov || !naslov.trim()) {
+      return res.status(400).json({ message: "Naslov je obavezan." });
+    }
+    if (!sadrzaj || !sadrzaj.trim()) {
+      return res.status(400).json({ message: "Sadržaj je obavezan." });
+    }
+    if (!tip || !tip.trim()) {
+      return res.status(400).json({ message: "Vrsta je obavezna." });
+    }
+    if (!odsjek || !odsjek.trim()) {
+      return res.status(400).json({ message: "Odsjek je obavezan." });
+    }
+
+    // 4. Provjeri da odsjek postoji
+    const odsjekPostoji = await Korisnik.findById(req.user._id).select("odsjek");
+    if (!odsjekPostoji) {
+      return res.status(404).json({ message: "Korisnik nije pronađen." });
+    }
+
+    // 5. Kreiraj novu objavu
     const novaObjava = new Objava({
       naslov: naslov.trim(),
       sadrzaj: sadrzaj.trim(),
-      tip,
-      odsjek,
+      tip: tip.trim(),
+      odsjek: odsjek.trim(),
       autor: req.user._id,
-      status: "na čekanju",
+      status: "na čekanju", // Sve objave počinju kao "na čekanju"
       datum: new Date(),
+      views: 0,
+      saves: 0,
+      pinned: false,
+      urgentno: false,
     });
 
     const saved = await novaObjava.save();
+    console.log("✅ Objava kreirana:", saved._id);
+
+    // 6. Popuni kompletne podatke
     const full = await Objava.findById(saved._id)
       .populate("autor", "ime avatar")
       .populate("odsjek", "naziv");
 
-    res.status(201).json(ObjavaDTO(full));
+    return res.status(201).json({
+      message: "Objava poslana na odobrenje!",
+      objava: ObjavaDTO(full),
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Greška pri slanju objave.", error: err.message });
-  }
-};
-
-// Dohvati sve objave za admin panel
-export const getAllObjaveAdmin = async (req, res) => {
-  try {
-    const objave = await Objava.find({})
-      .populate("autor", "ime email uloga avatar")
-      .populate("odsjek", "naziv")
-      .sort({ datum: -1 });
-
-    res.status(200).json(objave.map(ObjavaDTO));
-  } catch (err) {
-    res.status(500).json({
-      message: "Greška pri dohvaćanju admin objava.",
+    console.error("❌ createObjava error:", err);
+    return res.status(500).json({
+      message: "Greška pri slanju objave.",
       error: err.message,
     });
   }
@@ -165,7 +227,16 @@ export const deleteObjava = async (req, res) => {
 // GET /api/objave/paginated
 export const getPaginatedObjave = async (req, res) => {
   try {
-    const { page = 1, limit = 9, tip, odsjek, sortBy = "newest", search } = req.query;
+    const { 
+      page = 1, 
+      limit = 9, 
+      tip, 
+      odsjek, 
+      sortBy = "newest", 
+      search,
+      periodFilter, // "week", "month", "past"
+      mojeSpremljene // "true" ako želi vidjeti samo spremljene
+    } = req.query;
 
     const query = { status: "odobreno" };
 
@@ -173,19 +244,33 @@ export const getPaginatedObjave = async (req, res) => {
     if (tip && tip !== "Sve") query.tip = tip;
     if (odsjek) query.odsjek = odsjek;
 
-    // Search (full-text search preko indexa)
+    // Search
     if (search && search.trim()) {
       query.$text = { $search: search.trim() };
     }
 
-    // Sortiranje
-    let sort = {};
+    // Period filter
+    if (periodFilter) {
+      const now = new Date();
+      if (periodFilter === "week") {
+        const weekAgo = new Date(now.setDate(now.getDate() - 7));
+        query.datum = { $gte: weekAgo };
+      } else if (periodFilter === "month") {
+        const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+        query.datum = { $gte: monthAgo };
+      } else if (periodFilter === "past") {
+        query.datum = { $lt: new Date() };
+      }
+    }
+
+    // Sortiranje - PINNED PRVO
+    let sort = { pinned: -1 }; // Pinned objave uvijek prve
     if (sortBy === "views") {
-      sort = { views: -1 };
+      sort.views = -1;
     } else if (sortBy === "oldest") {
-      sort = { datum: 1 };
+      sort.datum = 1;
     } else {
-      sort = { datum: -1 }; // newest
+      sort.datum = -1; // newest
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -198,8 +283,17 @@ export const getPaginatedObjave = async (req, res) => {
 
     const total = await Objava.countDocuments(query);
 
+    // Dodaj "isNew" flag za objave mlađe od 3 dana
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    const objaveSaFlags = objave.map((obj) => ({
+      ...obj.toObject(),
+      isNew: new Date(obj.datum) > threeDaysAgo,
+    }));
+
     res.json({
-      objave,
+      objave: objaveSaFlags,
       currentPage: parseInt(page),
       totalPages: Math.ceil(total / parseInt(limit)),
       totalObjave: total,
@@ -211,6 +305,35 @@ export const getPaginatedObjave = async (req, res) => {
   }
 };
 
+// PATCH /api/objave/:id/pin
+export const togglePinObjava = async (req, res) => {
+  try {
+    const objava = await Objava.findById(req.params.id);
+    if (!objava) return res.status(404).json({ message: "Objava nije pronađena" });
+
+    objava.pinned = !objava.pinned;
+    await objava.save();
+
+    res.json({ message: `Objava ${objava.pinned ? "prikvačena" : "otkvačena"}`, objava });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// PATCH /api/objave/:id/urgentno
+export const toggleUrgentnoObjava = async (req, res) => {
+  try {
+    const objava = await Objava.findById(req.params.id);
+    if (!objava) return res.status(404).json({ message: "Objava nije pronađena" });
+
+    objava.urgentno = !objava.urgentno;
+    await objava.save();
+
+    res.json({ message: `Objava ${objava.urgentno ? "označena kao hitna" : "više nije hitna"}`, objava });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 // Objave određenog korisnika (javni profil)
 export const getObjaveByAutor = async (req, res) => {
