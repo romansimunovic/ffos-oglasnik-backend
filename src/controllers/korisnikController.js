@@ -20,37 +20,25 @@ const buildFullAvatarUrl = (avatarPath, req) => {
   return backendBase ? `${backendBase}${avatarPath}` : avatarPath;
 };
 
+// Dodaj $inc: { saves: 1 }
 export const spremiObjavu = async (req, res) => {
   try {
     const objavaId = req.params.objavaId || req.params.id;
-    if (!objavaId) {
-      return res.status(400).json({ message: "ID objave nije proslijeđen." });
-    }
-
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: "Niste autorizirani." });
-    }
+    if (!objavaId) return res.status(400).json({ message: "ID objave nije proslijeđen." });
+    if (!req.user || !req.user._id) return res.status(401).json({ message: "Niste autorizirani." });
 
     const objava = await Objava.findById(objavaId).select("_id");
-    if (!objava) {
-      return res.status(404).json({ message: "Objava ne postoji." });
-    }
+    if (!objava) return res.status(404).json({ message: "Objava ne postoji." });
 
+    await Objava.findByIdAndUpdate(objava._id, { $inc: { saves: 1 } }); // inkrement saves
     const updated = await Korisnik.findByIdAndUpdate(
       req.user._id,
       { $addToSet: { spremljeneObjave: objava._id } },
       { new: true }
     ).select("spremljeneObjave");
-
-    return res.status(200).json({
-      message: "Objava spremljena.",
-      count: updated?.spremljeneObjave?.length ?? 0,
-    });
+    return res.status(200).json({ message: "Objava spremljena.", count: updated?.spremljeneObjave?.length ?? 0 });
   } catch (err) {
-    console.error("spremiObjavu error:", err);
-    return res
-      .status(500)
-      .json({ message: "Greška pri spremanju objave.", error: err.message });
+    return res.status(500).json({ message: "Greška pri spremanju objave.", error: err.message });
   }
 };
 
