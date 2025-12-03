@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -11,6 +10,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import objavaRoutes from "./src/routes/objavaRoutes.js";
 import odsjekRoutes from "./src/routes/odsjekRoutes.js";
 import korisnikRoutes from "./src/routes/korisnikRoutes.js";
+import { ensureAdminUser } from "./src/utils/ensureAdminUser.js"; // ✅ NOVO
 
 dotenv.config();
 
@@ -30,7 +30,7 @@ if (!fs.existsSync(avatarsDir)) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS - prefer explicit origin from env; fallback to true for development
+// CORS
 const allowedOrigin = process.env.FRONTEND_URL || true;
 app.use(
   cors({
@@ -39,17 +39,8 @@ app.use(
   })
 );
 
-// serve uploaded files (so frontend može pristupiti /uploads/avatars/...)
+// serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// connect to Mongo
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("MongoDB povezan!"))
-  .catch((err) => console.error("Greška spajanja s bazom:", err));
 
 // API routes
 app.use("/api/auth", authRoutes);
@@ -65,16 +56,14 @@ if (fs.existsSync(distPath)) {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 } else {
-  // helpful fallback for API-only mode
   app.get("/", (req, res) => {
     res.send("API radi. Frontend build (dist) nije pronađen na serveru.");
   });
 }
 
-// global error handler (simple)
+// global error handler
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
-  // multer fileFilter returns Error object; if so, send 400
   if (err && err.message && err.message.includes("Samo")) {
     return res.status(400).json({ message: err.message });
   }
@@ -82,4 +71,26 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server radi na portu ${PORT}`));
+
+// Konekcija na Mongo + kreiranje admina + start servera
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(async () => {
+    console.log("MongoDB povezan!");
+
+    //  ovdje jednom provjerimo / kreiramo admina!
+    try {
+      await ensureAdminUser();
+    } catch (e) {
+      console.error("Greška pri ensureAdminUser:", e.message);
+    }
+
+    app.listen(PORT, () => console.log(`Server radi na portu ${PORT}`));
+  })
+  .catch((err) => {
+    console.error("Greška spajanja s bazom:", err);
+    process.exit(1);
+  });
