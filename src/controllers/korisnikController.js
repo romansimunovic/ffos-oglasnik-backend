@@ -11,7 +11,8 @@ const UPLOADS_DIR = path.join(__dirname, "../../uploads/avatars");
 
 const buildFullAvatarUrl = (avatarPath, req) => {
   if (!avatarPath) return null;
-  if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://")) return avatarPath;
+  if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://"))
+    return avatarPath;
   // ako imamo req, iz njega izvuci host, inače fallback na BACKEND_URL
   if (req) {
     return `${req.protocol}://${req.get("host")}${avatarPath}`;
@@ -24,8 +25,10 @@ const buildFullAvatarUrl = (avatarPath, req) => {
 export const spremiObjavu = async (req, res) => {
   try {
     const objavaId = req.params.objavaId || req.params.id;
-    if (!objavaId) return res.status(400).json({ message: "ID objave nije proslijeđen." });
-    if (!req.user || !req.user._id) return res.status(401).json({ message: "Niste autorizirani." });
+    if (!objavaId)
+      return res.status(400).json({ message: "ID objave nije proslijeđen." });
+    if (!req.user || !req.user._id)
+      return res.status(401).json({ message: "Niste autorizirani." });
 
     const objava = await Objava.findById(objavaId).select("_id");
     if (!objava) return res.status(404).json({ message: "Objava ne postoji." });
@@ -36,9 +39,14 @@ export const spremiObjavu = async (req, res) => {
       { $addToSet: { spremljeneObjave: objava._id } },
       { new: true }
     ).select("spremljeneObjave");
-    return res.status(200).json({ message: "Objava spremljena.", count: updated?.spremljeneObjave?.length ?? 0 });
+    return res.status(200).json({
+      message: "Objava spremljena.",
+      count: updated?.spremljeneObjave?.length ?? 0,
+    });
   } catch (err) {
-    return res.status(500).json({ message: "Greška pri spremanju objave.", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Greška pri spremanju objave.", error: err.message });
   }
 };
 
@@ -100,7 +108,8 @@ export const uploadAvatar = async (req, res) => {
         const prevFilePath = path.join(UPLOADS_DIR, prevFilename);
         if (fs.existsSync(prevFilePath)) {
           fs.unlink(prevFilePath, (err) => {
-            if (err) console.warn("Ne mogu obrisati prethodni avatar:", err.message);
+            if (err)
+              console.warn("Ne mogu obrisati prethodni avatar:", err.message);
           });
         }
       }
@@ -134,8 +143,11 @@ export const getKorisnikById = async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(400).json({ message: "ID nije proslijeđen." });
 
-    const korisnik = await Korisnik.findById(id).select("ime uloga avatar createdAt");
-    if (!korisnik) return res.status(404).json({ message: "Korisnik nije pronađen." });
+    const korisnik = await Korisnik.findById(id).select(
+      "ime uloga avatar createdAt"
+    );
+    if (!korisnik)
+      return res.status(404).json({ message: "Korisnik nije pronađen." });
 
     // ako avatar je relativan, vratimo pun URL koristeći req
     const avatarFull = korisnik.avatar
@@ -151,6 +163,54 @@ export const getKorisnikById = async (req, res) => {
     });
   } catch (err) {
     console.error("getKorisnikById error:", err);
-    return res.status(500).json({ message: "Greška pri dohvaćanju korisnika.", error: err.message });
+    return res.status(500).json({
+      message: "Greška pri dohvaćanju korisnika.",
+      error: err.message,
+    });
+  }
+};
+
+export const ukloniSpremljenuObjavu = async (req, res) => {
+  try {
+    const objavaId = req.params.objavaId || req.params.id;
+    if (!objavaId) {
+      return res.status(400).json({ message: "ID objave nije proslijeđen." });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Niste autorizirani." });
+    }
+
+    const objava = await Objava.findById(objavaId).select("_id saves");
+    if (!objava) {
+      return res.status(404).json({ message: "Objava ne postoji." });
+    }
+
+    // 1) makni objavu iz spremljenih kod korisnika
+    const korisnik = await Korisnik.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { spremljeneObjave: objava._id } },
+      { new: true }
+    ).select("spremljeneObjave");
+
+    if (!korisnik) {
+      return res.status(404).json({ message: "Korisnik ne postoji." });
+    }
+
+    // 2) smanji saves counter na objavi (ne idemo ispod 0)
+    if (typeof objava.saves === "number" && objava.saves > 0) {
+      await Objava.findByIdAndUpdate(objava._id, { $inc: { saves: -1 } });
+    }
+
+    return res.status(200).json({
+      message: "Objava uklonjena iz spremljenih.",
+      count: korisnik.spremljeneObjave.length,
+    });
+  } catch (err) {
+    console.error("ukloniSpremljenuObjavu error:", err);
+    return res.status(500).json({
+      message: "Greška pri uklanjanju spremljene objave.",
+      error: err.message,
+    });
   }
 };

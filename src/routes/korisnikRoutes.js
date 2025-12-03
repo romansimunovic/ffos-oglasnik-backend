@@ -11,6 +11,7 @@ import {
   getSpremljeneObjave,
   uploadAvatar,
   getKorisnikById, // <-- import add
+  ukloniSpremljenuObjavu,
 } from "../controllers/korisnikController.js";
 
 const router = express.Router();
@@ -56,6 +57,8 @@ const upload = multer({
 router.post("/spremiObjavu/:objavaId", protect, spremiObjavu);
 router.get("/spremljene", protect, getSpremljeneObjave);
 router.post("/upload-avatar", protect, upload.single("avatar"), uploadAvatar);
+
+router.delete("/spremljene/:objavaId", protect, ukloniSpremljenuObjavu);
 
 // PUBLIC user profile by id (param route) — put after other static routes
 router.get("/:id", getKorisnikById);
