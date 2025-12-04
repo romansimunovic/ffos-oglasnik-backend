@@ -10,17 +10,6 @@ const createToken = (userId) =>
 const generateVerificationCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false, // za 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
 export const register = async (req, res) => {
   try {
     const { ime, email, lozinka, uloga = "user" } = req.body;
@@ -96,8 +85,9 @@ export const verifyEmail = async (req, res) => {
     }
 
     const user = await Korisnik.findOne({ email });
-    if (!user)
+    if (!user) {
       return res.status(400).json({ message: "Korisnik ne postoji." });
+    }
 
     if (user.isVerified) {
       return res.status(400).json({ message: "Korisnik je već verificiran." });
