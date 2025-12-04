@@ -66,4 +66,39 @@ if (fs.existsSync(distPath)) {
 }
 
 // global error handler
-app.use((err, req, res, nex))
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (err && err.message && err.message.includes("Samo")) {
+    return res.status(400).json({ message: err.message });
+  }
+  res.status(err.status || 500).json({ message: err.message || "Server error" });
+});
+
+const PORT = process.env.PORT || 5000;
+
+// Konekcija na Mongo + kreiranje admina + start servera
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(async () => {
+    console.log("✅ MongoDB povezan!");
+
+    // Kreiramo admina ako ne postoji
+    try {
+      await ensureAdminUser();
+      console.log("✅ Admin user provjeren/kreiran");
+    } catch (e) {
+      console.error("⚠️ Greška pri ensureAdminUser:", e.message);
+    }
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server radi na portu ${PORT}`);
+      console.log(`📍 Frontend origin: ${frontendUrl}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Greška spajanja s bazom:", err);
+    process.exit(1);
+  });
