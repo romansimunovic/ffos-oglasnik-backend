@@ -66,4 +66,4 @@ if (fs.existsSync(distPath)) {
 }
 
 // global error handler
-app.use((err, req, res, nex
+app.use((err, req, res, nex))
