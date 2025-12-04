@@ -16,12 +16,16 @@ export const ensureAdminUser = async () => {
   const hash = await bcrypt.hash(adminLozinka, 10);
 
   const admin = await Korisnik.create({
-    ime: adminIme,
-    email: adminEmail,
-    lozinka: hash,
-    uloga: "admin",
-    odsjek: null, // ili neki default ako traži schema
-  });
+  ime: adminIme,
+  email: adminEmail,
+  lozinka: hash,
+  uloga: "admin",
+  odsjek: null,
+  isVerified: true,            // ⬅ dodaj
+  verificationCode: null,      // opcionalno
+  verificationExpires: null,   // opcionalno
+});
+
 
   console.log("👑 Kreiran početni admin:", admin.email);
 };

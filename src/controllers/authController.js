@@ -89,9 +89,12 @@ export const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: "Korisnik ne postoji." });
     }
 
-    if (user.isVerified) {
-      return res.status(400).json({ message: "Korisnik je već verificiran." });
-    }
+    if (user.uloga !== "admin" && !user.isVerified) {
+  return res
+    .status(403)
+    .json({ message: "Prije prijave morate potvrditi email." });
+}
+
 
     if (
       !user.verificationCode ||
