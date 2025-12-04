@@ -89,13 +89,6 @@ export const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: "Korisnik ne postoji." });
     }
 
-    if (user.uloga !== "admin" && !user.isVerified) {
-  return res
-    .status(403)
-    .json({ message: "Prije prijave morate potvrditi email." });
-}
-
-
     if (
       !user.verificationCode ||
       user.verificationCode !== code ||
@@ -131,6 +124,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+
 export const login = async (req, res) => {
   try {
     const { email, lozinka } = req.body;
@@ -147,11 +141,11 @@ export const login = async (req, res) => {
         .json({ message: "Pogrešan email ili lozinka." });
     }
 
-    if (!user.isVerified) {
-      return res
-        .status(403)
-        .json({ message: "Prije prijave morate potvrditi email." });
-    }
+    if (user.uloga !== "admin" && !user.isVerified) {
+  return res
+    .status(403)
+    .json({ message: "Prije prijave morate potvrditi email." });
+}
 
     const match = await bcrypt.compare(lozinka, user.lozinka);
     if (!match) {
