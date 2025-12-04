@@ -1,7 +1,6 @@
 import Korisnik from "../models/Korisnik.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 
 const DOMAIN = "@ffos.hr";
 
@@ -10,6 +9,7 @@ const createToken = (userId) =>
 
 const generateVerificationCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
+
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -58,7 +58,7 @@ export const register = async (req, res) => {
     const code = generateVerificationCode();
     const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
-    const novi = await Korisnik.create({
+    await Korisnik.create({
       ime,
       email,
       lozinka: hashed,
@@ -68,25 +68,10 @@ export const register = async (req, res) => {
       verificationExpires: expires,
     });
 
-    try {
-      await transporter.sendMail({
-        from: `"FFOS Oglasnik" <${process.env.SMTP_USER}>`,
-        to: email,
-        subject: "FFOS Oglasnik - verifikacijski kod",
-        text: `Tvoj verifikacijski kod je: ${code}`,
-        html: `<p>Pozdrav ${ime},</p>
-               <p>Tvoj verifikacijski kod za FFOS Oglasnik je:</p>
-               <h2>${code}</h2>
-               <p>Kod vrijedi 15 minuta.</p>`,
-      });
-    } catch (mailErr) {
-      console.error("MAIL SEND ERROR:", mailErr);
-    }
-
     return res.status(201).json({
       message:
-        "Korisnik kreiran. Provjerite e-mail i unesite verifikacijski kod.",
-       devCode: code,
+        "Korisnik kreiran. (DEV) Kod je vraćen u odgovoru – unesite ga u sljedećem koraku.",
+      devCode: code,
     });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
