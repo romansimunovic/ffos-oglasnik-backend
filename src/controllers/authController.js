@@ -68,7 +68,6 @@ export const register = async (req, res) => {
       verificationExpires: expires,
     });
 
-    // slanje maila s verifikacijskim kodom
     try {
       await transporter.sendMail({
         from: `"FFOS Oglasnik" <${process.env.SMTP_USER}>`,
@@ -82,7 +81,6 @@ export const register = async (req, res) => {
       });
     } catch (mailErr) {
       console.error("MAIL SEND ERROR:", mailErr);
-      // po želji možeš ovdje vratiti 500 ako želiš blokirati registraciju kad mail faila
     }
 
     return res.status(201).json({
