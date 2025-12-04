@@ -86,7 +86,7 @@ export const register = async (req, res) => {
     return res.status(201).json({
       message:
         "Korisnik kreiran. Provjerite e-mail i unesite verifikacijski kod.",
-      // devCode: code,
+       devCode: code,
     });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
