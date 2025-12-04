@@ -4,7 +4,11 @@ import jwt from "jsonwebtoken";
 
 const DOMAIN = "@ffos.hr";
 
-const createToken = (userId) => jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+const createToken = (userId) =>
+  jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+const generateVerificationCode = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 export const register = async (req, res) => {
   try {
