@@ -86,7 +86,7 @@ export const register = async (req, res) => {
     return res.status(201).json({
       message:
         "Korisnik kreiran. Provjerite e-mail i unesite verifikacijski kod.",
-      // devCode: code, // ostavi zakomentirano ili ukloni u produkciji
+      // devCode: code,
     });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
@@ -95,6 +95,107 @@ export const register = async (req, res) => {
     }
     return res.status(500).json({
       message: "Greška servera pri registraciji.",
+      error: err.message,
+    });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res
+        .status(400)
+        .json({ message: "Email i kod su obavezni." });
+    }
+
+    const user = await Korisnik.findOne({ email });
+    if (!user)
+      return res.status(400).json({ message: "Korisnik ne postoji." });
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Korisnik je već verificiran." });
+    }
+
+    if (
+      !user.verificationCode ||
+      user.verificationCode !== code ||
+      !user.verificationExpires ||
+      user.verificationExpires < new Date()
+    ) {
+      return res.status(400).json({ message: "Neispravan ili istekao kod." });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.verificationExpires = null;
+    await user.save();
+
+    const token = createToken(user._id);
+
+    return res.status(200).json({
+      message: "Email uspješno verificiran.",
+      token,
+      user: {
+        _id: user._id,
+        ime: user.ime,
+        email: user.email,
+        uloga: user.uloga,
+      },
+    });
+  } catch (err) {
+    console.error("VERIFY ERROR:", err);
+    return res.status(500).json({
+      message: "Greška servera pri verifikaciji.",
+      error: err.message,
+    });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, lozinka } = req.body;
+    if (!email || !lozinka) {
+      return res
+        .status(400)
+        .json({ message: "Email i lozinka su obavezni." });
+    }
+
+    const user = await Korisnik.findOne({ email }).select("+lozinka");
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "Pogrešan email ili lozinka." });
+    }
+
+    if (!user.isVerified) {
+      return res
+        .status(403)
+        .json({ message: "Prije prijave morate potvrditi email." });
+    }
+
+    const match = await bcrypt.compare(lozinka, user.lozinka);
+    if (!match) {
+      return res
+        .status(401)
+        .json({ message: "Pogrešan email ili lozinka." });
+    }
+
+    const token = createToken(user._id);
+    return res.status(200).json({
+      token,
+      user: {
+        _id: user._id,
+        ime: user.ime,
+        email: user.email,
+        uloga: user.uloga,
+      },
+    });
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    return res.status(500).json({
+      message: "Greška servera pri loginu.",
       error: err.message,
     });
   }
