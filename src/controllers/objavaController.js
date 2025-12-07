@@ -35,7 +35,9 @@ export const getObjave = async (req, res) => {
 
     res.status(200).json(objave.map(ObjavaDTO));
   } catch (err) {
-    res.status(500).json({ message: "Greška pri dohvaćanju objava.", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Greška pri dohvaćanju objava.", error: err.message });
   }
 };
 
@@ -44,21 +46,24 @@ export const getObjavaById = async (req, res) => {
   try {
     const { id } = req.params;
     await Objava.findByIdAndUpdate(id, { $inc: { views: 1 } });
-    const objava = await Objava.findById(id).populate("autor", "ime avatar").populate("odsjek", "naziv");
+    const objava = await Objava.findById(id)
+      .populate("autor", "ime avatar")
+      .populate("odsjek", "naziv");
     if (!objava)
       return res.status(404).json({ message: "Objava nije pronađena." });
     res.status(200).json(ObjavaDTO(objava));
   } catch (err) {
-    res.status(500).json({ message: "Greška pri dohvaćanju objave.", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Greška pri dohvaćanju objave.", error: err.message });
   }
 };
-
 
 // GET /api/objave/admin/sve - Update za search
 export const getAllObjaveAdmin = async (req, res) => {
   try {
     const { search, tip } = req.query;
-    
+
     const query = {};
     if (search) {
       query.$or = [
@@ -100,8 +105,8 @@ export const createObjava = async (req, res) => {
 
     // 2. Provjeri da admin NIJE kreator (admin samo odobrava)
     if (req.user.uloga === "admin") {
-      return res.status(403).json({ 
-        message: "Administratori ne mogu kreirali objave. Samo študenti." 
+      return res.status(403).json({
+        message: "Administratori ne mogu kreirali objave. Samo študenti.",
       });
     }
 
@@ -122,7 +127,9 @@ export const createObjava = async (req, res) => {
     }
 
     // 4. Provjeri da odsjek postoji
-    const odsjekPostoji = await Korisnik.findById(req.user._id).select("odsjek");
+    const odsjekPostoji = await Korisnik.findById(req.user._id).select(
+      "odsjek"
+    );
     if (!odsjekPostoji) {
       return res.status(404).json({ message: "Korisnik nije pronađen." });
     }
@@ -166,9 +173,19 @@ export const createObjava = async (req, res) => {
 // Dohvati objave prijavljenog korisnika (Moje objave)
 export const getMojeObjave = async (req, res) => {
   try {
-    const objave = await Objava.find({ autor: req.user._id })
+    const { status } = req.query; // npr. "na čekanju", "odobreno", "odbijeno"
+
+    const query = { autor: req.user._id };
+
+    // ako je status poslan, filtriraj po njemu
+    if (status && status.trim()) {
+      query.status = status.trim();
+    }
+
+    const objave = await Objava.find(query)
       .populate("odsjek", "naziv")
       .sort({ datum: -1 });
+
     res.status(200).json(objave.map(ObjavaDTO));
   } catch (err) {
     res.status(500).json({
@@ -184,9 +201,7 @@ export const updateObjavaStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     if (!id || !status) {
-      return res
-        .status(400)
-        .json({ message: "ID i status su obavezni." });
+      return res.status(400).json({ message: "ID i status su obavezni." });
     }
 
     const updated = await Objava.findByIdAndUpdate(
@@ -227,15 +242,15 @@ export const deleteObjava = async (req, res) => {
 // GET /api/objave/paginated
 export const getPaginatedObjave = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 9, 
-      tip, 
-      odsjek, 
-      sortBy = "newest", 
+    const {
+      page = 1,
+      limit = 9,
+      tip,
+      odsjek,
+      sortBy = "newest",
       search,
       periodFilter, // "week", "month", "past"
-      mojeSpremljene // "true" ako želi vidjeti samo spremljene
+      mojeSpremljene, // "true" ako želi vidjeti samo spremljene
     } = req.query;
 
     const query = { status: "odobreno" };
@@ -309,12 +324,16 @@ export const getPaginatedObjave = async (req, res) => {
 export const togglePinObjava = async (req, res) => {
   try {
     const objava = await Objava.findById(req.params.id);
-    if (!objava) return res.status(404).json({ message: "Objava nije pronađena" });
+    if (!objava)
+      return res.status(404).json({ message: "Objava nije pronađena" });
 
     objava.pinned = !objava.pinned;
     await objava.save();
 
-    res.json({ message: `Objava ${objava.pinned ? "prikvačena" : "otkvačena"}`, objava });
+    res.json({
+      message: `Objava ${objava.pinned ? "prikvačena" : "otkvačena"}`,
+      objava,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -324,12 +343,18 @@ export const togglePinObjava = async (req, res) => {
 export const toggleUrgentnoObjava = async (req, res) => {
   try {
     const objava = await Objava.findById(req.params.id);
-    if (!objava) return res.status(404).json({ message: "Objava nije pronađena" });
+    if (!objava)
+      return res.status(404).json({ message: "Objava nije pronađena" });
 
     objava.urgentno = !objava.urgentno;
     await objava.save();
 
-    res.json({ message: `Objava ${objava.urgentno ? "označena kao hitna" : "više nije hitna"}`, objava });
+    res.json({
+      message: `Objava ${
+        objava.urgentno ? "označena kao hitna" : "više nije hitna"
+      }`,
+      objava,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
