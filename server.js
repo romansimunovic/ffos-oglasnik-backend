@@ -43,6 +43,7 @@ app.use(
   })
 );
 
+// NOVI - sve korisničke rute pod /api/korisnik
 app.use("/api/korisnik", notificationRoutes);
 
 // serve uploaded files
