@@ -1,8 +1,7 @@
-// src/controllers/objavaController.js
 import Objava from "../models/Objava.js";
 import Korisnik from "../models/Korisnik.js";
 import { ObjavaDTO } from "../dto/ObjavaDTO.js";
-import { createNotification } from "./notificationController.js"; // putanja prilagodi ako folder drugačiji
+import { createNotificationForUser } from "./obavijestController.js";
 
 // Dohvati SVE odobrene objave
 export const getObjave = async (req, res) => {
@@ -218,21 +217,21 @@ export const updateObjavaStatus = async (req, res) => {
       return res.status(404).json({ message: "Objava nije pronađena." });
 
     // KREIRAJ OBAVIJEST KAD JE ODBIJENO ILI ODOBRENO
-    try {
-      const autorId = updated.autor?._id || updated.autor;
-      if (status === "odbijeno") {
-        const title = "Objava odbijena";
-        const message = `Tvoja objava '${updated.naslov}' je odbijena.${reason ? " Razlog: " + reason : ""}`;
-        await createNotification({ userId: autorId, objavaId: updated._id, title, message, meta: { reason } });
-      } else if (status === "odobreno") {
-        const title = "Objava odobrena";
-        const message = `Tvoja objava '${updated.naslov}' je odobrena i vidljiva je svima.`;
-        await createNotification({ userId: updated.autor._id || updated.autor, objavaId: updated._id, title, message });
-      }
-    } catch (notifyErr) {
-      console.warn("Neuspio kreirati obavijest:", notifyErr);
-      // ne vraćamo error korisniku — samo logiramo
-    }
+try {
+  const autorId = updated.autor?._id || updated.autor;
+  if (status === "odbijeno") {
+    const title = "Objava odbijena";
+    const message = `Tvoja objava '${updated.naslov}' je odbijena.${reason ? " Razlog: " + reason : ""}`;
+    await createNotificationForUser({ userId: autorId, title, message, objavaId: updated._id });
+  } else if (status === "odobreno") {
+    const title = "Objava odobrena";
+    const message = `Tvoja objava '${updated.naslov}' je odobrena i vidljiva je svima.`;
+    await createNotificationForUser({ userId: autorId, title, message, objavaId: updated._id });
+  }
+} catch (notifyErr) {
+  console.warn("Neuspio kreirati obavijest:", notifyErr);
+  // ne vraćamo error korisniku — samo logiramo
+}
 
     res.status(200).json(ObjavaDTO(updated));
   } catch (err) {

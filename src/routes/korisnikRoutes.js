@@ -10,7 +10,7 @@ import {
   spremiObjavu,
   getSpremljeneObjave,
   uploadAvatar,
-  getKorisnikById, // <-- import add
+  getKorisnikById,
   ukloniSpremljenuObjavu,
 } from "../controllers/korisnikController.js";
 
@@ -19,30 +19,30 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ensure avatars upload directory exists (relative to project root/uploads/avatars)
+// ensure uploads dir exists
 const avatarsDir = path.join(__dirname, "../../uploads/avatars");
 if (!fs.existsSync(avatarsDir)) {
   fs.mkdirSync(avatarsDir, { recursive: true });
 }
 
-// multer storage config
+// multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, avatarsDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    const base = req.user?._id?.toString() || "anon";
+    // ako protect nije prošao, fallback na "anon"
+    const base = req.user?._id?.toString() || `anon-${Date.now()}`;
     cb(null, `${base}-${Date.now()}${ext}`);
   },
 });
 
-// only allow images and limit size
+// only images, size limit
 function fileFilter(req, file, cb) {
   const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
   if (!allowed.includes(file.mimetype)) {
-    cb(new Error("Samo PNG/JPEG/WebP su dozvoljeni."), false);
-    return;
+    return cb(new Error("Samo PNG / JPEG / WEBP su dozvoljeni."), false);
   }
   cb(null, true);
 }
@@ -53,14 +53,25 @@ const upload = multer({
   fileFilter,
 });
 
-// specific routes (non-param) — keep these before the generic "/:id"
+// ---- STATIC / NON-PARAM rute (moraju ići prije param route) ----
+// SPREMANJE objave u user's favourites (protected)
+// NOTE: frontend treba POST /korisnik/spremiObjavu/:objavaId
 router.post("/spremiObjavu/:objavaId", protect, spremiObjavu);
-router.get("/spremljene", protect, getSpremljeneObjave);
-router.post("/upload-avatar", protect, upload.single("avatar"), uploadAvatar);
 
+// DOHVAT spremljenih za trenutnog usera (protected)
+// frontend GET /korisnik/spremljene
+router.get("/spremljene", protect, getSpremljeneObjave);
+
+// Ukloni spremljenu objavu (protected)
+// frontend DELETE /korisnik/spremljene/:objavaId
 router.delete("/spremljene/:objavaId", protect, ukloniSpremljenuObjavu);
 
-// PUBLIC user profile by id (param route) — put after other static routes
+// Upload avatar (protected + multer)
+// multipart/form-data field name: "avatar"
+router.post("/upload-avatar", protect, upload.single("avatar"), uploadAvatar);
+
+// ---- PARAM rute (public profile by id) ----
+// GET /korisnik/:id  (public)
 router.get("/:id", getKorisnikById);
 
 export default router;
