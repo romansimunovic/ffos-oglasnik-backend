@@ -1,7 +1,7 @@
 import Objava from "../models/Objava.js";
 import Korisnik from "../models/Korisnik.js";
 import { ObjavaDTO } from "../dto/ObjavaDTO.js";
-import { createNotificationForUser } from "./obavijestController.js";
+import Obavijest from "../models/Obavijest.js";
 
 // Dohvati SVE odobrene objave
 export const getObjave = async (req, res) => {
@@ -220,14 +220,14 @@ export const updateObjavaStatus = async (req, res) => {
 try {
   const autorId = updated.autor?._id || updated.autor;
   if (status === "odbijeno") {
-    const title = "Objava odbijena";
-    const message = `Tvoja objava '${updated.naslov}' je odbijena.${reason ? " Razlog: " + reason : ""}`;
-    await createNotificationForUser({ userId: autorId, title, message, objavaId: updated._id });
-  } else if (status === "odobreno") {
-    const title = "Objava odobrena";
-    const message = `Tvoja objava '${updated.naslov}' je odobrena i vidljiva je svima.`;
-    await createNotificationForUser({ userId: autorId, title, message, objavaId: updated._id });
-  }
+  const title = "Objava odbijena";
+  const message = `Tvoja objava '${updated.naslov}' je odbijena.${reason ? " Razlog: " + reason : ""}`;
+  await Obavijest.create({ korisnik: autorId, title, message, objavaId: updated._id });
+} else if (status === "odobreno") {
+  const title = "Objava odobrena";
+  const message = `Tvoja objava '${updated.naslov}' je odobrena i vidljiva je svima.`;
+  await Obavijest.create({ korisnik: autorId, title, message, objavaId: updated._id });
+}
 } catch (notifyErr) {
   console.warn("Neuspio kreirati obavijest:", notifyErr);
   // ne vraćamo error korisniku — samo logiramo
