@@ -2,6 +2,7 @@
 import Objava from "../models/Objava.js";
 import Korisnik from "../models/Korisnik.js";
 import { ObjavaDTO } from "../dto/ObjavaDTO.js";
+import { createNotification } from "./notificationController.js"; // putanja prilagodi ako folder drugačiji
 
 // Dohvati SVE odobrene objave
 export const getObjave = async (req, res) => {
@@ -199,7 +200,8 @@ export const getMojeObjave = async (req, res) => {
 export const updateObjavaStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, reason } = req.body; // optional reason za odbijanje
+
     if (!id || !status) {
       return res.status(400).json({ message: "ID i status su obavezni." });
     }
@@ -215,6 +217,23 @@ export const updateObjavaStatus = async (req, res) => {
     if (!updated)
       return res.status(404).json({ message: "Objava nije pronađena." });
 
+    // KREIRAJ OBAVIJEST KAD JE ODBIJENO ILI ODOBRENO
+    try {
+      const autorId = updated.autor?._id || updated.autor;
+      if (status === "odbijeno") {
+        const title = "Objava odbijena";
+        const message = `Tvoja objava '${updated.naslov}' je odbijena.${reason ? " Razlog: " + reason : ""}`;
+        await createNotification({ userId: autorId, objavaId: updated._id, title, message, meta: { reason } });
+      } else if (status === "odobreno") {
+        const title = "Objava odobrena";
+        const message = `Tvoja objava '${updated.naslov}' je odobrena i vidljiva je svima.`;
+        await createNotification({ userId: updated.autor._id || updated.autor, objavaId: updated._id, title, message });
+      }
+    } catch (notifyErr) {
+      console.warn("Neuspio kreirati obavijest:", notifyErr);
+      // ne vraćamo error korisniku — samo logiramo
+    }
+
     res.status(200).json(ObjavaDTO(updated));
   } catch (err) {
     res.status(500).json({
@@ -223,6 +242,7 @@ export const updateObjavaStatus = async (req, res) => {
     });
   }
 };
+
 
 // Admin: brisanje objave
 export const deleteObjava = async (req, res) => {

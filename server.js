@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-
+import notificationRoutes from "./src/routes/notificationRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import objavaRoutes from "./src/routes/objavaRoutes.js";
 import odsjekRoutes from "./src/routes/odsjekRoutes.js";
@@ -42,6 +42,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+app.use("/korisnik", notificationRoutes);
 
 // serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
