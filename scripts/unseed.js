@@ -1,5 +1,5 @@
-// scripts/unseed.js
 // Pokretanje: node scripts/unseed.js --mongo="<MONGO_URI>" --seedRunId=seed-123456789
+
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
@@ -22,7 +22,7 @@ const USERS_COLL = "korisniks";
 const POSTS_COLL = "objavas";
 
 console.log("Connecting to", MONGO_URI);
-await mongoose.connect(MONGO_URI, {});
+await mongoose.connect(MONGO_URI);
 const db = mongoose.connection;
 const usersColl = db.collection(USERS_COLL);
 const postsColl = db.collection(POSTS_COLL);
