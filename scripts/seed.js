@@ -57,16 +57,17 @@ function genUser(i) {
     email,
     lozinka: hashedPass,
     uloga: "user",
+    avatar: "/default-avatar.png", // ← default avatar
     spremljeneObjave: [],
     isVerified: true,
     verificationCode: null,
     verificationExpires: null,
-    avatar: null,
     createdAt: now,
     updatedAt: now,
     seed: true,
     seedRunId,
   };
+
 }
 
 // --- Generiranje objava s realnijim naslovima ---
