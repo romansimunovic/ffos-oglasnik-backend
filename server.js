@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+
 import notificationRoutes from "./src/routes/obavijestRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import objavaRoutes from "./src/routes/objavaRoutes.js";
@@ -19,43 +20,67 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// ensure uploads directory exists
+// ------------------------
+// 📁 Ensure upload folders
+// ------------------------
 const uploadsDir = path.join(__dirname, "uploads");
 const avatarsDir = path.join(uploadsDir, "avatars");
 if (!fs.existsSync(avatarsDir)) {
   fs.mkdirSync(avatarsDir, { recursive: true });
 }
 
-// basic middlewares
+// ------------------------
+// 🔧 Middlewares
+// ------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🔧 ISPRAVLJENA CORS KONFIGURACIJA
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-console.log("🌐 CORS omogućen za:", frontendUrl);
+// ------------------------
+// 🌐 CORS (production + local dev)
+// ------------------------
+const allowedOrigins = [
+  "http://localhost:5173", // Vite
+  "http://localhost:3000", // fallback
+  (process.env.FRONTEND_URL || "").trim(), // Vercel deploy
+];
+
+console.log("📌 Allowed CORS origins:", allowedOrigins);
 
 app.use(
   cors({
-    origin: frontendUrl,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // mobile apps, backend calls
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.warn("❌ CORS blocked:", origin);
+        return callback(new Error("CORS blocked: " + origin), false);
+      }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// NOVI - sve korisničke rute pod /api/korisnik
-app.use("/api/korisnik", notificationRoutes);
-
-// serve uploaded files
+// ------------------------
+// 📁 Static file serving
+// ------------------------
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// API routes
+// ------------------------
+// 🛣️ API Routes
+// ------------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/objave", objavaRoutes);
 app.use("/api/odsjeci", odsjekRoutes);
 app.use("/api/korisnik", korisnikRoutes);
+app.use("/api/obavijesti", notificationRoutes); //  FIXED – ovo je ispravno!
 
-// serve frontend (Vite build) if exists
+// ------------------------
+// ⚡ Serve frontend build (optional)
+// ------------------------
 const distPath = path.join(__dirname, "dist");
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
@@ -64,22 +89,23 @@ if (fs.existsSync(distPath)) {
   });
 } else {
   app.get("/", (req, res) => {
-    res.send("API radi. Frontend build (dist) nije pronađen na serveru.");
+    res.send("API radi. Frontend build (dist) nije pronađen.");
   });
 }
 
-// global error handler
+// ------------------------
+// ❗ Global error handler
+// ------------------------
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  if (err && err.message && err.message.includes("Samo")) {
-    return res.status(400).json({ message: err.message });
-  }
+  console.error("❌ Unhandled error:", err);
   res.status(err.status || 500).json({ message: err.message || "Server error" });
 });
 
+// ------------------------
+// 🚀 Connect MongoDB + start server
+// ------------------------
 const PORT = process.env.PORT || 5000;
 
-// Konekcija na Mongo + kreiranje admina + start servera
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -88,17 +114,16 @@ mongoose
   .then(async () => {
     console.log("✅ MongoDB povezan!");
 
-    // Kreiramo admina ako ne postoji
     try {
       await ensureAdminUser();
-      console.log("✅ Admin user provjeren/kreiran");
+      console.log("👑 Admin user provjeren/kreiran");
     } catch (e) {
-      console.error("⚠️ Greška pri ensureAdminUser:", e.message);
+      console.error("⚠️ ensureAdminUser greška:", e.message);
     }
 
     app.listen(PORT, () => {
       console.log(`🚀 Server radi na portu ${PORT}`);
-      console.log(`📍 Frontend origin: ${frontendUrl}`);
+      console.log("🌐 CORS origins:", allowedOrigins);
     });
   })
   .catch((err) => {
