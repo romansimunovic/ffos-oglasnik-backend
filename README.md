@@ -204,5 +204,3 @@ npx kill-port 5000
 # 📜 Licenca
 
 Projekt izrađen u akademske i edukacijske svrhe na Filozofskom fakultetu u Osijeku.
-
-```
