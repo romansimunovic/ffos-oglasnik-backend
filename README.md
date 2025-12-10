@@ -1,4 +1,3 @@
-````md
 # 🎓 FFOS Oglasnik – Backend
 
 Backend dio web aplikacije **FFOS Oglasnik**, razvijen u Node.js (Express) s MongoDB bazom podataka.  
