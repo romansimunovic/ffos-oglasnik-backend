@@ -146,22 +146,6 @@ node src/scripts/unseed.js --mongo="<MONGO_URI>" --seedRunId=seed-1731512664371
 
 ---
 
-# 📁 Struktura projekta
-
-```
-src/
-│── models/
-│── controllers/
-│── routes/
-│── middleware/
-│── utils/
-│── scripts/
-│── uploads/
-server.js
-```
-
----
-
 # 🌐 Deployment (Render)
 
 1. Poveži backend repozitorij s Renderom
