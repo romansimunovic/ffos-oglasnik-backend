@@ -207,6 +207,3 @@ npx kill-port 5000
 Projekt izrađen u akademske i edukacijske svrhe na Filozofskom fakultetu u Osijeku.
 
 ```
-
-Hoćeš da to napravimo?
-```
