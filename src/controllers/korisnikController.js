@@ -97,8 +97,8 @@ export const uploadAvatar = async (req, res) => {
       return res.status(400).json({ message: "Nema datoteke." });
     }
 
+    // 🔑 SPREMI SAMO RELATIVNU PUTANJU
     const avatarRelative = `/uploads/avatars/${req.file.filename}`;
-    const avatarFull = buildFullAvatarUrl(avatarRelative, req);
 
     // pokušaj obrisati stari avatar ako je lokalni
     try {
@@ -117,16 +117,24 @@ export const uploadAvatar = async (req, res) => {
       console.warn("Problem pri pokušaju brisanja starog avatara:", e.message);
     }
 
+    // 🔑 SPREMI RELATIVNU PUTANJU, NIJE PUNI URL!
     const updated = await Korisnik.findByIdAndUpdate(
       req.user._id,
-      { avatar: avatarFull },
+      { avatar: avatarRelative }, // ✅ Samo relativna putanja
       { new: true }
     ).select("avatar ime email uloga");
 
+    // Vrati klijentu puni URL za preview, ali baza ima samo relativnu
+    const avatarFull = buildFullAvatarUrl(updated.avatar, req);
+
     return res.status(200).json({
       message: "Avatar ažuriran.",
-      avatar: updated.avatar,
-      user: updated,
+      avatar: avatarRelative, // 🔑 Vrati relativnu za localStorage
+      avatarFull: avatarFull, // Za preview
+      user: {
+        ...updated.toObject(),
+        avatar: avatarFull, // Za UI prikaz
+      },
     });
   } catch (err) {
     console.error("uploadAvatar error:", err);
@@ -136,6 +144,7 @@ export const uploadAvatar = async (req, res) => {
     });
   }
 };
+
 
 // NEW: publicni endpoint za dohvat korisnika po id (bez lozinke)
 export const getKorisnikById = async (req, res) => {
