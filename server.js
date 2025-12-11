@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-import notificationRoutes from "./src/routes/obavijestRoutes.js";
+import obavijestRoutes from "./src/routes/obavijestRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import objavaRoutes from "./src/routes/objavaRoutes.js";
 import odsjekRoutes from "./src/routes/odsjekRoutes.js";
@@ -76,7 +76,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/objave", objavaRoutes);
 app.use("/api/odsjeci", odsjekRoutes);
 app.use("/api/korisnik", korisnikRoutes);
-app.use("/api/obavijesti", notificationRoutes); //  FIXED – ovo je ispravno!
+app.use("/api/korisnik", obavijestRoutes); 
 
 // ------------------------
 // ⚡ Serve frontend build (optional)
